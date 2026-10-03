@@ -1,0 +1,69 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#152e66"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="description" content="Calculate net trade expectancy with partial take-profits, breakeven stops and trading costs."><title>Trade Expectancy</title><link rel="manifest" href="./manifest.webmanifest"><link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23152e66'/%3E%3Cpath d='M43 17H21v30h22M21 32h18' stroke='white' stroke-width='6' fill='none'/%3E%3C/svg%3E"><link rel="apple-touch-icon" href="./icon-192.png"><style>*{box-sizing:border-box}body{margin:0;background:#eef2f7;color:#192434;font:16px/1.5 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}#trade-ev-calculator{max-width:900px;margin:auto;padding:32px 24px 48px}header{margin-bottom:28px}.eyebrow{font-size:12px;letter-spacing:.16em;color:#345bd5;font-weight:700}h1{font-size:32px;letter-spacing:-.04em;margin:6px 0}header p{color:#5e6b7c;margin:0}h2{font-size:20px;margin:0 0 16px}h3{font-size:16px;margin:0 0 10px}.viz-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:20px}#ev-targets .viz-controls{grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:0}#ev-targets>div{padding:20px;background:#fff;border:1px solid #dce3ed;border-radius:16px}.form-label{display:flex;flex-direction:column;gap:7px;font-size:14px;font-weight:500}.form-control,.form-select{width:100%;min-width:0;padding:12px;border:1px solid #b9c5d5;border-radius:9px;background:#fff;color:#192434;font:inherit;font-size:16px;min-height:48px}input:focus,select:focus{outline:3px solid #95b0ff;outline-offset:1px}.form-check{display:flex;gap:10px;align-items:center;padding:6px 0 22px;font-size:14px}.form-check-input{width:20px;height:20px;accent-color:#345bd5}.hint{font-size:14px;color:#526174}.viz-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}.card{padding:16px 0}.viz-stat-value{font-size:32px;font-weight:650;letter-spacing:-.03em}.viz-stat>span{display:block;font-size:14px}#ev-results{background:#152e66;color:#fff;padding:24px;border-radius:18px;margin:24px 0}#ev-status{font-size:14px;color:#d4e0ff}.table{width:100%;border-collapse:collapse;margin:20px 0}.table th,.table td{text-align:left;padding:10px 0;border-bottom:1px solid #ffffff30;font-size:14px}.table th{font-weight:500;color:#d4e0ff}.table .text-end{text-align:right}.tabular-nums,.text-end{font-variant-numeric:tabular-nums}#ev-required{font-size:14px}details{font-size:14px;color:#526174}summary{cursor:pointer;padding:12px 0;font-weight:600;color:#192434}footer{font-size:12px;color:#667489;margin-top:24px}.text-destructive{color:#a52035;font-size:14px}[hidden]{display:none!important}@media(max-width:540px){#trade-ev-calculator{padding:22px 16px 32px}h1{font-size:28px}.viz-controls{grid-template-columns:1fr}#ev-targets>div{padding:16px}#ev-targets .viz-controls{gap:10px}.form-label{font-size:13px}.viz-stat-value{font-size:26px}#ev-results{padding:20px}.viz-grid{gap:10px}}</style></head><body><div id="trade-ev-calculator">
+<header><span class="eyebrow">TRADE PLANNING</span><h1>Trade expectancy</h1><p>Plan the exits. See the expected outcome.</p></header>
+<div class="viz-controls">
+<label class="form-label">Setup<select id="ev-preset" class="form-select"><option value="trend">Trend · 25 / 50 / 25</option><option value="counter">Countertrend · 50 / 50</option><option value="single">Single target · 100%</option></select></label>
+<label class="form-label">Stop management<select id="ev-stop" class="form-select"><option value="be">Move remainder to entry after TP1</option><option value="original">Keep original stop throughout</option></select></label>
+</div>
+<p class="hint">Hit rates are percentages of <strong>all trades</strong>. With BE enabled, count only targets filled before the breakeven stop.</p><div id="ev-targets"></div>
+<label class="form-check"><input id="ev-runner" class="form-check-input" type="checkbox" checked><span class="form-check-label">Include TP3 profit (25% hit rate is illustrative)</span></label>
+<div class="viz-controls">
+<label class="form-label">Average total costs (R)<input id="ev-cost" class="form-control" type="number" min="0" step="0.01" value="0.05"></label>
+<label class="form-label">Desired net expectancy (R)<input id="ev-goal" class="form-control" type="number" step="0.05" value="0.5"></label>
+<label class="form-label">Initial money risked per trade<input id="ev-risk" class="form-control" type="number" min="0" step="1" value="100"></label>
+</div>
+<div id="ev-error" class="text-destructive" role="alert"></div>
+<div id="ev-results" aria-live="polite"><h2>Your expected outcome</h2>
+<div class="viz-grid">
+<div class="card viz-stat"><span>Net expectancy / trade</span><div id="ev-net" class="viz-stat-value tabular-nums"></div></div>
+<div class="card viz-stat"><span>Expected money / trade</span><div id="ev-money" class="viz-stat-value tabular-nums"></div><span class="text-small">Same currency as your risk input</span></div>
+</div>
+<div class="viz-row" style="margin-top:16px"><span id="ev-status"></span></div>
+<table class="table table-sm"><thead><tr><th>Average contribution / trade</th><th class="text-end">R</th></tr></thead><tbody id="ev-breakdown"></tbody></table>
+<div id="ev-required" class="tabular-nums"></div>
+</div>
+<details><summary>How to use & assumptions</summary><p>1R is the initial risk on your whole position. A 1.5R target on a 25% allocation earns 0.375R.</p><p>Costs are average entry and exit fees, net funding and slippage divided by initial monetary risk. The default 0.05R is illustrative. Avoid double-counting costs already in your returns.</p><p>Excluding TP3 removes its profit credit, but keeps its initial downside. Required TP2 assumes unchanged hit rates; farther targets may be less likely to fill. No trailing stops or early discretionary exits are modelled.</p><p>Expected profit is a long-run average, not a prediction for this trade or a position-sizing recommendation.</p><p>To keep this app on your phone, use your browser’s Add to Home Screen option. Settings are saved in this browser only; they do not sync between devices.</p></details><footer>Saved on this device · Calculator inputs stay in your browser</footer>
+</div>
+<script>
+(function(){
+const root=document.getElementById('trade-ev-calculator');
+const q=s=>root.querySelector(s);
+const presets={trend:[[50,1.5,25],[40,3,50],[25,5,25]],counter:[[50,1.5,50],[40,2,50]],single:[[50,2,100]]};
+let count=3;
+function build(){const rows=presets[q('#ev-preset').value];count=rows.length;q('#ev-targets').innerHTML=rows.map((r,i)=>`<div style="margin:16px 0"><h3>TP${i+1}</h3><div class="viz-controls"><label class="form-label">Hit rate · % of all trades<input aria-label="TP${i+1} hit rate percent of all trades" class="form-control" data-i="${i}" data-k="p" type="number" min="0" max="100" step="1" value="${r[0]}"></label><label class="form-label">Profit target · R<input aria-label="TP${i+1} profit target in R" class="form-control" data-i="${i}" data-k="t" type="number" min="0" step="0.1" value="${r[1]}"></label><label class="form-label">Position closed · %<input aria-label="TP${i+1} original position allocation percent" class="form-control" data-i="${i}" data-k="w" type="number" min="0" max="100" step="1" value="${r[2]}"></label></div></div>`).join('');q('#ev-runner').parentElement.hidden=count!==3;update();}
+function update(){
+const rows=Array.from({length:count},(_,i)=>{let r={};for(const k of ['p','t','w']){const el=q(`[data-i="${i}"][data-k="${k}"]`);r[k]=el.value===''?NaN:Number(el.value);}r.p/=100;r.w/=100;return r;});
+const read=id=>q(id).value===''?NaN:Number(q(id).value);
+const c=read('#ev-cost'),goal=read('#ev-goal'),risk=read('#ev-risk');
+let error='';
+if(![c,goal,risk,...rows.flatMap(r=>[r.p,r.t,r.w])].every(Number.isFinite))error='Enter a number in every field.';
+else if(c<0||risk<0||rows.some(r=>r.p<0||r.p>1||r.w<0||r.w>1||r.t<=0))error='Use hit rates and allocations from 0–100%, positive targets, and nonnegative risk and costs.';
+else if(Math.abs(rows.reduce((s,r)=>s+r.w,0)-1)>1e-6)error='Position allocations must add up to 100%.';
+else if(rows.some((r,i)=>i>0&&r.p>rows[i-1].p))error='Later TP hit rates cannot exceed earlier TP hit rates.';
+else if(rows.some((r,i)=>i>0&&r.t<=rows[i-1].t))error='Targets must increase: TP1 < TP2 < TP3.';
+q('#ev-error').textContent=error;q('#ev-results').hidden=!!error;if(error)return;
+const credited=rows.map((r,i)=>i!==2||q('#ev-runner').checked);
+const profits=rows.map((r,i)=>credited[i]?r.w*r.p*r.t:0);
+const be=q('#ev-stop').value==='be';
+const loss=be?1-rows[0].p:rows.reduce((s,r)=>s+r.w*(1-r.p),0);
+const ev=profits.reduce((a,b)=>a+b,0)-loss-c;
+const fmt=n=>(n>=0?'+':'')+n.toFixed(4);
+q('#ev-net').textContent=fmt(ev)+' R';q('#ev-money').textContent=(ev*risk).toFixed(2);
+q('#ev-status').textContent=(ev>=goal?'Meets':'Below')+' your '+goal.toFixed(2)+'R target · '+(ev>0?'positive':ev<0?'negative':'zero')+' modelled expectancy';
+q('#ev-breakdown').innerHTML=profits.map((v,i)=>`<tr><td>TP${i+1} profit${credited[i]?'':' (excluded)'}</td><td class="text-end">${fmt(v)}</td></tr>`).join('')+`<tr><td>Stop losses</td><td class="text-end">${fmt(-loss)}</td></tr><tr><td>Average total costs</td><td class="text-end">${fmt(-c)}</td></tr>`;
+if(count<2){q('#ev-required').textContent='';return;}
+const coefficient=rows[1].p*rows[1].w;
+if(coefficient===0){q('#ev-required').textContent='Required TP2: unavailable with zero TP2 hit rate or allocation.';return;}
+const needed=rows[1].t+(goal-ev)/coefficient;
+let note=needed<=rows[0].t?'Any TP2 above TP1 meets the target at these fixed probabilities.':`Required TP2 ≥ ${(Math.ceil(needed*1000-1e-9)/1000).toFixed(3)}R at unchanged hit rates.`;
+if(count===3&&needed>=rows[2].t)note+=' Incompatible with current TP3: TP2 must be below TP3.';
+q('#ev-required').textContent=note;
+}
+q('#ev-preset').addEventListener('change',()=>{build();save();});root.addEventListener('input',()=>{update();save();});q('#ev-stop').addEventListener('change',()=>{update();save();});build();
+function save(){try{localStorage.setItem('trade-expectancy-v1',JSON.stringify(Array.from(root.querySelectorAll('input,select')).map(el=>({id:el.id,i:el.dataset.i,k:el.dataset.k,value:el.value,checked:el.checked}))));}catch(e){}}
+try{const saved=JSON.parse(localStorage.getItem('trade-expectancy-v1')||'null');if(Array.isArray(saved)){const preset=saved.find(x=>x.id==='ev-preset');if(preset&&presets[preset.value]){q('#ev-preset').value=preset.value;build();}for(const v of saved){const el=v.id?q('#'+v.id):q(`[data-i="${v.i}"][data-k="${v.k}"]`);if(el){el.value=v.value;if(el.type==='checkbox')el.checked=v.checked;}}update();}}catch(e){}
+const context=document.modelContext;
+if(context?.registerTool){try{Promise.resolve(context.registerTool({name:'read_trade_expectancy',description:'Read the current calculator inputs, validation and expected outcome.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true},execute(){return {inputs:Array.from(root.querySelectorAll('input,select')).map(el=>({name:el.id||('tp'+(Number(el.dataset.i)+1)+'_'+el.dataset.k),value:el.type==='checkbox'?el.checked:el.value})),error:q('#ev-error').textContent,netExpectancy:q('#ev-error').textContent?null:q('#ev-net').textContent,requiredTP2:q('#ev-error').textContent?null:q('#ev-required').textContent};}})).catch(()=>{});}catch(e){}}
+
+})();
+</script>
+</body></html>
